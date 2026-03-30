@@ -1,8 +1,10 @@
 from manim import *
+from collections.abc import Callable, Iterable, Sequence
 from scipy.integrate import solve_ivp
+from scipy.optimize import fsolve
 
 # Debug mode?
-g_debug = True
+gabe_debug = True
 
 # Create Cambria Math tex_template
 cambria_math = TexTemplate()
@@ -28,21 +30,6 @@ MathTex.set_default(color=BLACK)
 # First animation for factoring the static equation
 class FactorStaticEq(Scene):
     def construct(self):
-        cambria_math = TexTemplate()
-        cambria_math.description = "Cambria Math"
-        cambria_math.add_to_preamble(
-            r"""
-            \usepackage[english]{babel}
-            \usepackage{amssymb}
-            \usepackage{amsmath}
-            \usepackage{unicode-math}
-            \setmainfont{PT Sans}
-            \setmathfont{Cambria Math}
-            """
-        )
-        cambria_math.tex_compiler = "xelatex"
-        cambria_math.output_format = ".xdv"
-
         eq1 = MathTex("\\left(1-\\dfrac{1-r^2}{m}\\right)", "r", "=1-", "u", tex_template=cambria_math) 
         eq1_fade = MathTex("u","=1-","\\left(1-\\dfrac{1-r^2}{m}\\right)", "r", tex_template=cambria_math)
 
@@ -101,6 +88,7 @@ class FactorStaticEq(Scene):
         self.play(TransformMatchingTex(eq4_fade2, eq4_fade3, transform_mismatches=True), run_time=anim_run_time)
         self.wait()
         
+        # old version
         # self.remove(eq1_fade)
         # self.add(eq2)
         # self.play(TransformMatchingTex(eq2, eq2_fade, transform_mismatches=True, run_time=0.5))
@@ -342,7 +330,7 @@ class IntroStaticPlot(Scene):
         # ----- Animation -----
 
         # Scene 1: Show axes and draw plot
-        self.next_section(name="Show static plot", skip_animations=g_debug)
+        self.next_section(name="Show static plot", skip_animations=gabe_debug)
         axLGroup.move_to(cached_axLPosition)
         self.play(Write(axLGroup))
         self.play(FadeIn(f1_dot, f1))
@@ -350,7 +338,7 @@ class IntroStaticPlot(Scene):
         self.play(FadeIn(f1_background))
 
         # Transition to Scene 2: Move axis to left and draw new axis on right
-        self.next_section(name="Show combined plots", skip_animations=g_debug)
+        self.next_section(name="Show combined plots", skip_animations=gabe_debug)
         self.play(r.animate.set_value(1), m.animate.set_value(0.5),axLGroup.animate.to_edge(LEFT, buff=0.5), run_time=0.5)
         
         self.play(Write(f2_group))
@@ -358,7 +346,7 @@ class IntroStaticPlot(Scene):
         self.play(r.animate.set_value(1), run_time=5)
 
         # Transition to Scene 3: Show effect of parameter m on plot
-        self.next_section(name="Show m", skip_animations=g_debug)
+        self.next_section(name="Show m", skip_animations=gabe_debug)
         self.play(FadeOut(f2_loadGroup, f1_dot, f2_dot, f2_connector), FadeIn(f1_showM), run_time=0.5)
 
         self.play(m.animate.set_value(1/5), run_time=2)
@@ -367,7 +355,7 @@ class IntroStaticPlot(Scene):
         self.wait(duration=1)
 
         # Transition to Scene 4: Show effect of quasistatic solution on plot
-        self.next_section(name="Show quasistatic", skip_animations=g_debug)
+        self.next_section(name="Show quasistatic", skip_animations=gabe_debug)
         self.play(m.animate.set_value(0.5), FadeIn(f2_loadGroup, f1_dot, f1, f2_dot, f2_connector), FadeOut(f1_showM), run_time=0.5)
         #self.play(axLGroup.animate.move_to(cached_axLPosition), run_time=1)
 
