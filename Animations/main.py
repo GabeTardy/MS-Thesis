@@ -447,14 +447,116 @@ class CriticalLoadPlot(ThreeDScene):
             )
             return mob
     
+    # A modified version of Surface.set_fill_by_value I created to hack in a function argument.
+    def Surface_set_fill_by_func_HACK(
+        self,
+        surf: Surface,
+        axes: ThreeDAxes,
+        func: Callable[[float, float, float, ThreeDAxes], float],
+        colorscale: Iterable[tuple[ParsableManimColor, float]]
+        | None = None,
+        **kwargs,
+    ):
+        if "colors" in kwargs and colorscale is None:
+            colorscale = kwargs.pop("colors")
+            if kwargs:
+                raise ValueError(
+                    "Unsupported keyword argument(s): "
+                    f"{', '.join(str(key) for key in kwargs)}"
+                )
+        if colorscale is None:
+            logger.warning(
+                "The value passed to the colorscale keyword argument was None, "
+                "the surface fill color has not been changed"
+            )
+            return surf
+        colorscale_list = list(colorscale)
+
+        ranges = [axes.x_range, axes.y_range, axes.z_range]
+        assert isinstance(colorscale_list, list)
+        new_colors: list[ManimColor]
+        if type(colorscale_list[0]) is tuple and len(colorscale_list[0]) == 2:
+            new_colors, pivots = [
+                [ManimColor(i) for i, j in colorscale_list],
+                [j for i, j in colorscale_list],
+            ]
+
+        for mob in surf.family_members_with_points():
+            axis_coords = axes.point_to_coords(mob.get_midpoint())
+            axis_value = func(*axis_coords, axes) # MAIN GABE CHANGE
+            if axis_value <= pivots[0]:
+                mob.set_color(new_colors[0])
+            elif axis_value >= pivots[-1]:
+                mob.set_color(new_colors[-1])
+            else:
+                for i, pivot in enumerate(pivots):
+                    if pivots[i] > axis_value and pivots[i - 1] <= axis_value:
+                        color_index = (axis_value - pivots[i - 1]) / (
+                            pivots[i] - pivots[i - 1]
+                        )
+                        color_index = min(color_index, 1)
+                        if new_colors[i - 1] == new_colors[i]:
+                            mob_color = new_colors[i]
+                        else:
+                            mob_color = interpolate_color(
+                                new_colors[i - 1],
+                                new_colors[i],
+                                color_index
+                            )
+                        mob.set_color(mob_color, family=False)
+
+        return surf
+    
     def construct(self):
+        # Analysis data
+        case_order = [2, 0, 1, 3, 4]
         m = [0.125, 0.25, 0.5, 0.75, 1]
         MSE = [0.002052, 0.0007413, 0.0006248, 0.0008099, 0.0000915]
         C_1 = [2.8064, 2.8868, 2.5714, 2.4784, 2.7377]
         C_2 = [-2.8674, -1.3995, -0.5726, -0.2898, -0.2138]
         u_crSB_1 = [-2.5202, -1.0000, -0.2722, -0.0642, 0]
 
-        ax = ThreeDAxes(x_range=[0,4,0.5], y_range=[-2,3.5,0.5], z_range=[0,1,0.1], x_length = 8, y_length = 6, z_length = 6, z_normal=OUT, axis_config={"font_size": 34, "line_to_number_buff": 0.35}, x_axis_config={"numbers_to_include": [1, 2, 3], "numbers_with_elongated_ticks": [1, 2, 3], "decimal_number_config": {"num_decimal_places": 0}}, y_axis_config={"numbers_to_include": [-2, -1, 1, 2, 3], "numbers_with_elongated_ticks": [-2, -1, 0, 1, 2, 3], "decimal_number_config": {"num_decimal_places": 0}}, z_axis_config={"numbers_to_include": [0.125, 0.25, 0.5, 0.75, 1], "numbers_with_elongated_ticks": [0, 0.5, 1]})
+        # Extra resolution for surfaces
+        extra_res = 1 # 12
+
+        # The critical load data for each analysis
+        snap_back = [
+            [[0.25, -0.594050301581923], [0.5, -1.01422941485510], [1, -1.50776715608130], [2, -1.89885346008929]],
+            [[0.25, 0.940579460565630], [0.5, 0.508716059666878], [1, 0.00507046694915370], [2, -0.434725582872564], [3, -0.665948943611302], [4, -0.811844056419436]],
+            [[0.5, 1.12344489785301], [1, 0.730096027762329], [2, 0.309777576926472], [3, 0.0710461813772062], [4, -0.0831312020135785]],
+            [[1, 0.935026702471830], [2, 0.566137841408373], [3, 0.336219110064516], [4, 0.183887623048940]],
+            [[2, 0.695843801612453], [3, 0.478335883289152], [4, 0.328888520594037]]
+        ]
+        snap_through = [
+            [[0.25, 3.50388059697133], [0.5, 3.50387844272568], [1, 3.50385223569700], [2, 3.50383859116229]], 
+            [[0.25, 1.99158386165452], [0.5, 1.99157941787177], [1, 1.99156071736985], [2, 1.99144863675450], [3, 1.99138319803787], [4, 1.99117150285552]], 
+            [[0.5, 1.29014617360733], [1, 1.26513596927266], [2, 1.25362489004554], [3, 1.24782387026284], [4, 1.24478353762307]], 
+            [[1, 1.06091307668767], [2, 1.02009659156036], [3, 1.00612888450787], [4, 0.998532587960407]], 
+            [[2, 0.915754660903339], [3, 0.892709088950617], [4, 0.881361737141619]]
+        ]
+        
+        # Find all no snap-through/no-snap-back points
+        no_snap_through = [
+            [fsolve(lambda x: ((C_1[i]/(x+1)+C_2[i]) - (1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i])), 0.5)[0], (1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i]), m[i]]
+            for i in case_order
+        ]
+
+        no_snap_back = [
+            [fsolve(lambda x: ((C_1[i]/(x+1)+C_2[i])), 3)[0], 0, m[i]]
+            for i in case_order
+        ]
+
+        # just move points so far off screen that they don't render if they are out of bounds
+        for i, nsb in enumerate(no_snap_back):
+            if nsb[0] > 4:
+                no_snap_back[i][0] = 10000
+        
+        for i, nst in enumerate(no_snap_through):
+            if nst[0] < 0:
+                no_snap_through[i][0] = 10000
+
+        ax = ThreeDAxes(x_range=[0,4,0.5], y_range=[-2,4,0.5], z_range=[0,1,0.1], x_length = 8, y_length = 6, z_length = 6, z_normal=OUT, axis_config={"font_size": 34, "line_to_number_buff": 0.35}, x_axis_config={"numbers_to_include": [1, 2, 3], "numbers_with_elongated_ticks": [1, 2, 3], "decimal_number_config": {"num_decimal_places": 0}}, y_axis_config={"numbers_to_include": [-2, -1, 1, 2, 3], "numbers_with_elongated_ticks": [-2, -1, 0, 1, 2, 3], "decimal_number_config": {"num_decimal_places": 0}}, z_axis_config={"numbers_to_include": [0.125, 0.25, 0.5, 0.75, 1], "numbers_with_elongated_ticks": [0, 0.5, 1]})
+        ax.apply_matrix([[1,0,0],[0,1,0],[0,0,-1]])
 
         ax_x = ax.get_x_axis()
         ax_y = ax.get_y_axis()
@@ -462,43 +564,176 @@ class CriticalLoadPlot(ThreeDScene):
 
         ax_x_l = ax.get_x_axis_label(MathTex('\\eta_E').set_color(BLACK))
         ax_y_l = ax.get_y_axis_label(MathTex('u_{crit}').set_color(BLACK)).rotate(-PI/2)
-        ax_z_l = ax.get_z_axis_label(MathTex('m').set_color(BLACK)).rotate(PI, axis=RIGHT)
+        ax_z_l = ax.get_z_axis_label(MathTex('m').set_color(BLACK)).rotate(PI, axis=RIGHT).next_to(ax_z.get_end(), IN + UP, buff=0.25)
         
         ax_x.set_color(BLACK)
         ax_y.set_color(BLACK)
         ax_z.set_color(BLACK)
 
+        # Create a grid for the etaE-m plane
+        etaE_m_plane = Surface(lambda u, v: ax.c2p(u, 0, v), resolution=[8, 10], u_range=[0, 4], v_range=[0, 1]).set_style(fill_color = PURPLE, fill_opacity = 0.05, stroke_color = PURPLE, stroke_opacity = 0.5)
+
         # Create fake 2D group to show before transitioning to 3D plot
         fake_2d_group = VGroup(ax_x, ax_y, ax_x_l, ax_y_l)
-        real_3d_apply = VGroup(ax_z, ax_z_l)
+        real_3d_apply = VGroup(ax_z, ax_z_l, etaE_m_plane)
+        rotation_group = VGroup(ax_x, ax_y, ax_z)
         all_axes_group = VGroup(fake_2d_group, real_3d_apply)
 
-        self.next_section(name="Show single slice m=1/2", skip_animations=g_debug)
-        #self.set_camera_orientation()
-        self.play(Write(fake_2d_group))
-        self.wait(duration=1)
+        # Show critical points from analysis
+        best_fit_dp = VGroup(*[
+            VGroup(
+                MathTex("m = ", m[i], font_size=34).rotate(PI/2).next_to(ax.c2p([0,1,m[i]]), LEFT),
+                ax.plot_parametric_curve(lambda t: (0, t, m[i]), t_range=[-2,4,0.5], color=BLACK),
+                *[
+                    Dot(ax.c2p(*pt, m[i]), color=BLUE)
+                    for pt in snap_through[i]
+                ], *[
+                    Dot(ax.c2p(*pt, m[i]), color=ORANGE)
+                    for pt in snap_back[i]
+                ]
+            )
+            for i in case_order
+        ])
+
+        # Move m = 1/2 text (for initial plotting purposes)
+        best_fit_dp[0][0].next_to(ax.c2p([-0.25,1,0.5]), LEFT)
+
+        # Draw best-fit curves
+        best_fit_att1 = VGroup(*[
+            VGroup(
+                ax.plot_parametric_curve(lambda x: (x, 1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i], m[i]), t_range = [0, 4, 0.01], color=BLUE, stroke_width=8), 
+                ax.plot_parametric_curve(lambda x: (x, C_1[i]/(x+1)+C_2[i], m[i]), t_range = [0, 4, 0.01], color=ORANGE, stroke_width=8),
+                # Surface(lambda u, v: ax.c2p(u, v, m[i]), u_range=(0,4), v_range=(-2,4), color=BLACK).set_style(fill_opacity=0.1, fill_color=BLACK, stroke_opacity=1, stroke_color=BLACK)
+            )
+            for i in case_order
+        ])
+
+        # Show no-snap-through/no-snap-back points
+        best_fit_ns = VGroup(*[
+            VGroup(Dot(ax.c2p(no_snap_through[i]), color=BLACK), Dot(ax.c2p(no_snap_back[i]), color=PURPLE))
+            for i in [0, 1, 2, 3, 4] # Using case order here would scramble the points and idk what the contracted notation for this is
+        ])
+
+        # Draw best-fit surfaces
+        def snap_surface_state(u, v, w, axes:ThreeDAxes):
+            smoothing_scale = 0.05
+            u_range = axes.x_range[1] - axes.x_range[0]
+            v_range = axes.y_range[1] - axes.y_range[0]
+            w_range = axes.z_range[1] - axes.z_range[0]
+            
+            total_value = 0
+            # total_value += snap_surface_state2(u, v, w)*2 # slight higher weight on the real value
+            # total_value += snap_surface_state2(u - smoothing_scale*u_range, v, w) 
+            # total_value += snap_surface_state2(u + smoothing_scale*u_range, v, w) 
+            # total_value += snap_surface_state2(u, v - smoothing_scale*v_range, w) 
+            # total_value += snap_surface_state2(u, v + smoothing_scale*v_range, w) 
+            # total_value += snap_surface_state2(u, v, w - smoothing_scale*w_range) 
+            # total_value += snap_surface_state2(u, v, w + smoothing_scale*w_range) 
+
+            # bypass smoothing for now
+            total_value += snap_surface_state2(u, v, w)*8
+            return total_value/8
+        3
+        
+        # Original (produced bad jagged edges :( ))
+        def snap_surface_state2(u, v, w):
+            if v <= 0 or w <= 0:
+                return 1
+            elif 1 - w < 0.01 or 1.5/(u + 0.5) - 2*np.sqrt(3)/9*(1-w)**(3/2)/w > 1 + 2*np.sqrt(3)/9*(1-w)**(3/2)/w:
+                return 3
+            else:
+                return 2
+
+        sbs_init = (Surface(lambda u, v: ax.c2p(u, 1.5/(u + 0.5) - 2*np.sqrt(3)/9*(1-v)**(3/2)/v, v), u_range=(0,4), v_range=(0.1,1), resolution=[8*extra_res, 10*extra_res]).set_style(fill_opacity=0.5, stroke_opacity=0.9, stroke_color=BLACK))
+        sts_init = (Surface(lambda u, v: ax.c2p(u, 1 + 2*np.sqrt(3)/9*(1-v)**(3/2)/v, v), u_range=(0,4), v_range=(0.1,1), resolution=[8*extra_res, 10*extra_res]).set_style(fill_opacity=0.5, stroke_opacity=0.9, stroke_color=BLACK))
+        best_fit_surface_sb = self.Surface_set_fill_by_func_HACK(surf=sbs_init, axes=ax, colorscale=[(PURPLE, 1), (ORANGE, 1.25), (ORANGE, 2.75), (BLACK, 3)], func=snap_surface_state)
+        best_fit_surface_st = self.Surface_set_fill_by_func_HACK(surf=sts_init, axes=ax, colorscale=[(BLUE, 2.5), (BLACK, 3)], func=snap_surface_state)
+        best_fit_surfaces = VGroup(best_fit_surface_st, best_fit_surface_sb)
+
+        # --------- Begin animations ---------
+        # Scene 1: Just show m=1/2
+        self.next_section(name="Show single slice m=1/2", skip_animations=gabe_debug)
+        focal_distance = ValueTracker(10000)
+        self.camera.set_focal_distance(focal_distance.get_value())
+        self.play(Write(fake_2d_group), Write(best_fit_dp[0]))
+        self.wait(duration=4)
+
+        # Then fade in best-fit curves
+        self.play(Write(best_fit_att1[0]))
+        self.wait(duration=4)
+
+        # Then fade in no-snap points
+        self.play(Write(best_fit_ns[0]))
+        self.wait(duration=4)
 
         # --- Begin 360 degree animation
         # Thanks to 3b1b:
+        self.next_section(name="Show all 3D analyses", skip_animations=gabe_debug)
         self.set_camera_orientation(phi=90*DEGREES)
         self.orient_mobject_for_3d(all_axes_group)
+        self.orient_mobject_for_3d(best_fit_att1)
+        self.orient_mobject_for_3d(best_fit_surfaces)
+        self.orient_mobject_for_3d(best_fit_dp)
+        self.orient_mobject_for_3d(best_fit_ns)
+        self.add_fixed_orientation_mobjects(ax_x_l, ax_y_l, ax_z_l)
+        #self.add_fixed_orientation_mobjects(best_fit_dp, best_fit_ns)
+        ax_x_l.rotate(-PI/2, axis=RIGHT)
+        ax_y_l.rotate(-PI/2, axis=RIGHT)
+        self.remove(ax_z_l)
 
         phi, theta, focal_distance, gamma, distance_to_origin = self.camera.get_value_trackers()
 
-        total_rotation_time = 5 # seconds
+        # Begin a custom ambient camera rotation.
+        # The limitations of the original is that a smooth start cannot be created for the rate. This really looks ugly to me so I will be avoiding it.
+        rot_rate = ValueTracker(0)
+        theta.add_updater(lambda i, dt: theta.increment_value(rot_rate.get_value() * dt))
+        self.add(theta)
+
+        # Begin a very similar focal shift.
+        focal_distance.add_updater(lambda i, dt: self.camera.set_focal_distance(focal_distance.get_value()))
+        self.add(focal_distance)
+
+        total_rotation_time_into_3d = 5 # seconds
+        wait_to_draw_m_axis = 2 # seconds
+        rotation_ramp_time = 0.2 # seconds
+        
         self.play(
 
-            # Camera rotation
-            AnimationGroup(theta.animate.increment_value(400*DEGREES), phi.animate.increment_value(-10*DEGREES), rate_func=rate_functions.ease_in_out_quad, run_time=total_rotation_time),
+            # Begin ambient rotation
+            AnimationGroup(rot_rate.animate.set_value(0.08), run_time=rotation_ramp_time),
 
-            # Meanwhile...
+            # Shift focal distance
+            #AnimationGroup(focal_distance.animate.set_value(20), run_time=wait_to_draw_m_axis),
+
+            # Camera pan and rotation into new position
+            AnimationGroup(self.camera._frame_center.animate.move_to(ax.get_center()), phi.animate.increment_value(-10*DEGREES), run_time=total_rotation_time_into_3d),
+
+            # Meanwhile, create the rest of the plots in succession
             Succession(
                 *[
-                    Wait(run_time=1),
-                    Write(real_3d_apply)
+                    Wait(run_time=wait_to_draw_m_axis),
+                    AnimationGroup(Write(real_3d_apply), best_fit_dp[0][0].animate.next_to(ax.c2p([0,1,0.5]), LEFT)),
+                    LaggedStart(*[
+                        Succession(*[
+                            Write(best_fit_dp[i], run_time=0.5), # Write the points
+                            Write(best_fit_att1[i], run_time=0.5), # Draw the curve
+                            Write(best_fit_ns[i], run_time=0.5) # Write the no-snap-through/no-snap-back
+                        ])
+                        for i in [4, 3, 2, 1] # using case order scrambles plot writing
+                    ], lag_ratio=0.75),
+                    Wait(run_time=5),
+                    FadeIn(best_fit_surfaces)
                 ]
             )
         )
+        
+        self.wait(duration=30)
 
-        self.next_section(name="DEBUG", skip_animations=False)
-        self.wait(duration=2)
+        # self.next_section(name="DEBUG", skip_animations=False)
+        # rot_rate.set_value(0)
+        # self.wait(duration=1)
+
+if __name__ == "__main__":
+    with tempconfig({"quality": "low_quality", "preview": True}):
+        scene = CriticalLoadPlot()
+        scene.render()
