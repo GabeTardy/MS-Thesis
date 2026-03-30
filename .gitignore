@@ -1,0 +1,13 @@
+Animations/__pycache__/
+*.py[oc]
+Animations/build/
+Animations/dist/
+Animations/wheels/
+*.egg-info
+pyproject.toml
+Animations/README.md
+uv.lock
+.venv
+Animations/media/*
+.*
+!.gitignore
