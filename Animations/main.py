@@ -658,7 +658,7 @@ class CriticalLoadPlot(ThreeDScene):
         u_crSB_1 = [-2.5202, -1.0000, -0.2722, -0.0642, 0]
 
         # Extra resolution for surfaces
-        extra_res = 1 # 12
+        extra_res = 13
 
         # The critical load data for each analysis
         snap_back = [
@@ -744,6 +744,8 @@ class CriticalLoadPlot(ThreeDScene):
             VGroup(
                 ax.plot_parametric_curve(lambda x: (x, 1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i], m[i]), t_range = [0, 4, 0.01], color=BLUE, stroke_width=8), 
                 ax.plot_parametric_curve(lambda x: (x, C_1[i]/(x+1)+C_2[i], m[i]), t_range = [0, 4, 0.01], color=ORANGE, stroke_width=8),
+                MathTex("u_{cr,ST} = ", "{:.3f}".format(1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i]), font_size=28).next_to(ax.c2p([4, 1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i], m[i]]), RIGHT),
+                MathTex("u_{cr,SB} = \\dfrac{", "{:.3f}".format(C_1[i]), "}{x+1} - ", "{:.3f}".format(-C_2[i]), font_size=28).next_to(ax.c2p([4, C_1[i]/(4+1)+C_2[i], m[i]]), RIGHT),
                 # Surface(lambda u, v: ax.c2p(u, v, m[i]), u_range=(0,4), v_range=(-2,4), color=BLACK).set_style(fill_opacity=0.1, fill_color=BLACK, stroke_opacity=1, stroke_color=BLACK)
             )
             for i in case_order
@@ -791,12 +793,33 @@ class CriticalLoadPlot(ThreeDScene):
         best_fit_surface_st = self.Surface_set_fill_by_func_HACK(surf=sts_init, axes=ax, colorscale=[(BLUE, 2.5), (BLACK, 3)], func=snap_surface_state)
         best_fit_surfaces = VGroup(best_fit_surface_st, best_fit_surface_sb)
 
+        self.camera.set_zoom(0.8)
+
+        best_fit_surface_legend = VGroup(
+            MathTex("u_{cr,ST} = 1 + \\dfrac{2\\sqrt{3}}{9}\\dfrac{(1-m)^{3/2}}{m}", font_size=28, stroke_color = WHITE).set_color(BLUE).to_corner(UL),
+            MathTex("u_{cr,SB} = \\dfrac{1.5}{\\eta_E + 0.5} - \\dfrac{2\\sqrt{3}}{9}\\dfrac{(1-m)^{3/2}}{m}", font_size=28, stroke_color = WHITE).set_color(ORANGE).to_corner(DL).shift([0, 0.35, 0])
+        ) #.arrange(DOWN).center().to_edge(RIGHT, buff=1)
+
+        legend_initial = Tex("\\(\\blacksquare\\) Snap-through", font_size=28, color=BLUE)
+        legend_load    = Tex("\\(\\blacksquare\\) Snap-back", font_size=28, color=ORANGE)
+        legend_quasi    = Tex("\\(\\blacksquare\\)", " Snap-buckling ceases", font_size=28, color=BLACK)
+        legend_trans    = Tex("\\(\\blacksquare\\)", " Snap-back ceases (Morphing)", font_size=28, color=PURPLE)
+
+        legends = VGroup(legend_initial, legend_load, legend_quasi, legend_trans).arrange(RIGHT, buff=0.5).center().to_edge(DOWN, buff=0.25)
+
+        self.add_fixed_in_frame_mobjects(best_fit_surface_legend)
+        self.add_fixed_in_frame_mobjects(legends)
+
+        # misc setup
+        self.next_section(name="setup hack", skip_animations=True)
+        self.play(FadeOut(legends, best_fit_surface_legend))
+
         # --------- Begin animations ---------
         # Scene 1: Just show m=1/2
         self.next_section(name="Show single slice m=1/2", skip_animations=gabe_debug)
         focal_distance = ValueTracker(10000)
         self.camera.set_focal_distance(focal_distance.get_value())
-        self.play(Write(fake_2d_group), Write(best_fit_dp[0]))
+        self.play(Write(fake_2d_group), Write(best_fit_dp[0]), Write(legends))
         self.wait(duration=4)
 
         # Then fade in best-fit curves
@@ -805,7 +828,9 @@ class CriticalLoadPlot(ThreeDScene):
 
         # Then fade in no-snap points
         self.play(Write(best_fit_ns[0]))
+        self.next_section(name="DEBUG", skip_animations=False)
         self.wait(duration=4)
+        self.next_section(name="DEBUG", skip_animations=gabe_debug)
 
         # --- Begin 360 degree animation
         # Thanks to 3b1b:
@@ -837,7 +862,7 @@ class CriticalLoadPlot(ThreeDScene):
         total_rotation_time_into_3d = 5 # seconds
         wait_to_draw_m_axis = 2 # seconds
         rotation_ramp_time = 0.2 # seconds
-        
+
         self.play(
 
             # Begin ambient rotation
@@ -857,22 +882,25 @@ class CriticalLoadPlot(ThreeDScene):
                     LaggedStart(*[
                         Succession(*[
                             Write(best_fit_dp[i], run_time=0.5), # Write the points
+                            Wait(run_time=0.5),
                             Write(best_fit_att1[i], run_time=0.5), # Draw the curve
                             Write(best_fit_ns[i], run_time=0.5) # Write the no-snap-through/no-snap-back
                         ])
                         for i in [4, 3, 2, 1] # using case order scrambles plot writing
                     ], lag_ratio=0.75),
                     Wait(run_time=5),
-                    FadeIn(best_fit_surfaces)
+                    FadeIn(best_fit_surfaces),
+                    #distance_to_origin.animate.increment_value(10),
+                    Write(best_fit_surface_legend)
                 ]
             )
         )
         
         self.wait(duration=30)
 
-        # self.next_section(name="DEBUG", skip_animations=False)
-        # rot_rate.set_value(0)
-        # self.wait(duration=1)
+        self.next_section(name="DEBUG", skip_animations=False)
+        rot_rate.set_value(0)
+        self.wait(duration=1)
 
 if __name__ == "__main__":
     with tempconfig({"quality": "low_quality", "preview": True}):
