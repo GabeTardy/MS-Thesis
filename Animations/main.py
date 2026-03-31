@@ -4,7 +4,7 @@ from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve
 
 # Debug mode?
-gabe_debug = True
+gabe_debug = False
 
 # Create Cambria Math tex_template
 cambria_math = TexTemplate()
@@ -223,6 +223,10 @@ class IntroStaticPlot(Scene):
         axLLabels = axL.get_axis_labels(x_label=cmath('u'), y_label=cmath('r')).set_color(BLACK)
         axRLabels = axR.get_axis_labels(x_label=cmath('\\dfrac{x}{L}'), y_label=cmath('r')).set_color(BLACK)
 
+        # Extra notes
+        axLx_extra = Tex("Load", color=BLACK, font_size=28).next_to(axLLabels[0], direction=UP, buff=0.1)
+        axLy_extra = Tex("Displacement", color=BLACK, font_size=28).rotate(PI/2).next_to(axL.get_y_axis(), direction=LEFT, buff=0.1)
+
         # Create ValueTracker for parameters r, u (linked to r initially), m
         r = ValueTracker(1)
         m = ValueTracker(0.5)
@@ -305,14 +309,30 @@ class IntroStaticPlot(Scene):
         print(q_sol[2][anim_index(q_sol[3])]);
         anim_loop.set_value(0)
 
-        q_critical_point_st = Dot(point=axL.c2p(1 + 2*np.sqrt(3)/9*((1-m.get_value())**(3/2)/m.get_value()), 1/np.sqrt(3)*np.sqrt(1-m.get_value())), color=BLUE)
-        q_critical_point_sb = Dot(point=axL.c2p(1 - 2*np.sqrt(3)/9*((1-m.get_value())**(3/2)/m.get_value()), -1/np.sqrt(3)*np.sqrt(1-m.get_value())), color=BLUE)
+        q_critical_point_st = always_redraw(lambda: Dot(point=axL.c2p(1 + 2*np.sqrt(3)/9*((1-m.get_value())**(3/2)/m.get_value()), 1/np.sqrt(3)*np.sqrt(1-m.get_value())), color=BLUE))
+        q_critical_point_sb = always_redraw(lambda: Dot(point=axL.c2p(1 - 2*np.sqrt(3)/9*((1-m.get_value())**(3/2)/m.get_value()), -1/np.sqrt(3)*np.sqrt(1-m.get_value())), color=BLUE))
         q_critical_points = VGroup(q_critical_point_st, q_critical_point_sb)
 
+        q_cp_st_desc = Tex("\\(u_{cr}\\): Snap-through", font_size=28, color=BLUE).next_to(q_critical_point_st, direction=RIGHT, buff=0.1)
+        q_cp_sb_desc = Tex("\\(u_{cr}\\): Snap-back", font_size=28, color=BLUE).next_to(q_critical_point_sb, direction=RIGHT, buff=0.1)
+
         # Transient Solution (first modified tau0 to 50)
+        tau0s = [30, 10, 5, 1]
         t1_sol = acquire_transient_solution(2, 0.5, 3, 50, 5000) # create quasistatic solution
+        # t1_sols = [
+        #     acquire_transient_solution(2, 0.5, 3, tau0, 5000) for tau0 in tau0s
+        # ]
         
         t1_plot = always_redraw(lambda: axL.plot_line_graph(t1_sol[2][0:anim_index(t1_sol[3])], t1_sol[1][0:anim_index(t1_sol[3])], line_color=GREEN, stroke_width=4, add_vertex_dots=False))
+        # t1_plot_copy = axL.plot_line_graph(t1_sol[2][0:-1], t1_sol[1][0:-1], line_color=GREEN, stroke_width=4, add_vertex_dots=False)
+        # t1_plots = [
+        #     axL.plot_line_graph(sol[2][0:-1], sol[1][0:-1], line_color=GREEN, stroke_width=4, add_vertex_dots=False)
+        #     for sol in t1_sols
+        # ]
+        # t1_inds = [
+        #     cmath("m=","0.5","\\\\","\\tau_0=", tau0,"\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(BLACK) for tau0 in tau0s
+        # ]
+
         t1_dot = always_redraw(lambda: Dot(point=axL.c2p(t1_sol[2][anim_index(t1_sol[3])], t1_sol[1][anim_index(t1_sol[3])]), color=GREEN))
         t1_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "50","\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(BLACK)
         t1_rlock = lambda i: i.set_value(t1_sol[1][anim_index(t1_sol[3])])
@@ -320,43 +340,92 @@ class IntroStaticPlot(Scene):
 
         # Transient Solution (second modified zeta to 1/5)
         t2_sol = acquire_transient_solution(1/5, 0.5, 3, 50, 5000) # create quasistatic solution
+        # t2_sols_ud = [
+        #     acquire_transient_solution(zeta, 0.5, 3, 50, 5000) for zeta in [1/8, 1/7, 1/6, 1/5, 1/4, 1/3, 1/2, 1, 3/2]
+        # ]
+        # t2_sols_od = [
+        #     acquire_transient_solution(zeta, 0.5, 3, 50, 5000) for zeta in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        # ]
         
         t2_plot = always_redraw(lambda: axL.plot_line_graph(t2_sol[2][0:anim_index(t2_sol[3])], t2_sol[1][0:anim_index(t2_sol[3])], line_color=GREEN, stroke_width=4, add_vertex_dots=False))
+        # t2_plot_copy = axL.plot_line_graph(t2_sol[2][0:anim_index(t2_sol[3])], t2_sol[1][0:anim_index(t2_sol[3])], line_color=GREEN, stroke_width=4, add_vertex_dots=False)
+        # t2_plots_ud = [
+        #     axL.plot_line_graph(sol[2][0:-1], sol[1][0:-1], line_color=GREEN, stroke_width=4, add_vertex_dots=False)
+        #     for sol in t2_sols_ud
+        # ]
+        # t2_plots_od = [
+        #     axL.plot_line_graph(sol[2][0:-1], sol[1][0:-1], line_color=GREEN, stroke_width=4, add_vertex_dots=False)
+        #     for sol in t2_sols_ud
+        # ]
         t2_dot = always_redraw(lambda: Dot(point=axL.c2p(t2_sol[2][anim_index(t2_sol[3])], t2_sol[1][anim_index(t2_sol[3])]), color=GREEN))
         t2_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "50","\\\\", "\\zeta=", "0.2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(BLACK)
         t2_rlock = lambda i: i.set_value(t2_sol[1][anim_index(t2_sol[3])])
         t2_ulock = lambda i: i.set_value(t2_sol[2][anim_index(t2_sol[3])])
 
+        # legends
+        legend_initial = Tex("\\(\\blacksquare\\) Static Solution", font_size=28, color=BLUE).to_edge(DOWN)
+        legend_load    = Tex("\\(\\blacksquare\\) Load", font_size=28, color=RED).to_edge(DOWN)
+        legend_quasi    = Tex("\\(\\blacksquare\\)", " Quasistatic Solution", font_size=28, color=GREEN).to_edge(DOWN)
+        legend_trans    = Tex("\\(\\blacksquare\\)", " Transient Solution", font_size=28, color=GREEN).to_edge(DOWN)
+
+        # New addition: Runge-Kutta Overlay
+        overlay_rect = Rectangle(color = WHITE, height=self.camera.frame_height, width=self.camera.frame_width, fill_opacity=0.9)
+        overlay_equation = MathTex("\\dfrac{d^2 r}{d\\tau^2} + \\zeta \\dfrac{d r}{d\\tau} + ", "\\left(1-\\dfrac{1-r^2}{m}\\right)", "r", "=1-", "u", font_size=48).set_color(BLACK).to_edge(UP)
+        overlay_header_text = Tex("Runge-Kutta-Fehlberg (RKF45)", font_size=56).next_to(overlay_equation, direction=DOWN)
+        #VGroup(overlay_equation, overlay_header_text).center()
+        overlay_extras = MathTex("u=\\begin{cases}\\dfrac{\\tau}{\\tau_0}, & 0 \\le \\tau < n\\tau_0\\;\\;\\;\\;\\text{(Loading)}\\\\2n-\\dfrac{\\tau}{\\tau_0}, & n\\tau_0 \\le \\tau < 2n\\tau_0\\text{(Unloading)}\\end{cases}", font_size=36).next_to(overlay_header_text, direction=DOWN, buff=0.5)
+        overlay_extras2 = MathTex("\\text{ICs: } r(0) = 1, \\left.\\dfrac{dr}{d\\tau}\\right|_{\\tau=0}=0", font_size=36).next_to(overlay_extras, direction=DOWN, buff=0.5)
+
+        VGroup(overlay_equation, overlay_header_text, overlay_extras, overlay_extras2).center()
+
         # ----- Animation -----
 
-        # Scene 1: Show axes and draw plot
+        # Scene 1: In order to figure out what this solution means, let's plot the static solution on the u-r axes. 
         self.next_section(name="Show static plot", skip_animations=gabe_debug)
         axLGroup.move_to(cached_axLPosition)
         self.play(Write(axLGroup))
-        self.play(FadeIn(f1_dot, f1))
+        self.play(FadeIn(f1_dot, f1, legend_initial))
         self.play(r.animate.set_value(-1), run_time=2)
         self.play(FadeIn(f1_background))
 
-        # Transition to Scene 2: Move axis to left and draw new axis on right
+        # The curve shown now represents every combination of nondimensionalized load (u) and displacement (r) that causes the arch to be in static equilibrium. 
+        self.wait(duration=5)
+        self.play(Write(axLx_extra))
+        self.play(Write(axLy_extra))
+
+        # Now, you may be wondering: why is the independent quantity u on the horizontal axis?
+        self.wait(duration=7)
+
+        # Transition to Scene 2: Well, that's so that a vertical movement on the plot represents the actual vertical displacement of the arch.
         self.next_section(name="Show combined plots", skip_animations=gabe_debug)
-        self.play(r.animate.set_value(1), m.animate.set_value(0.5),axLGroup.animate.to_edge(LEFT, buff=0.5), run_time=0.5)
+
+        legend_load.next_to(legend_initial, RIGHT, buff=1)
+
+        self.play(r.animate.set_value(1), m.animate.set_value(0.5), VGroup(axLx_extra, axLy_extra, axLGroup).animate.to_edge(LEFT, buff=0.5), VGroup(legend_initial).animate.shift([-1*VGroup(legend_initial, legend_load).get_center()[0], 0, 0]), run_time=0.5)
+        legend_load.next_to(legend_initial, RIGHT, buff=1)
         
-        self.play(Write(f2_group))
+        self.play(FadeOut(axLx_extra, axLy_extra), Write(f2_group), FadeIn(legend_load, run_time=1))
         self.play(r.animate.set_value(-1), run_time=5)
         self.play(r.animate.set_value(1), run_time=5)
 
-        # Transition to Scene 3: Show effect of parameter m on plot
-        self.next_section(name="Show m", skip_animations=gabe_debug)
-        self.play(FadeOut(f2_loadGroup, f1_dot, f2_dot, f2_connector), FadeIn(f1_showM), run_time=0.5)
+        # Repeat for third time: but as you can see on the right side of this animation - this behavior doesn't seem to represent snap-buckling at all. There is no sudden jump - only smooth motion.
+        self.play(r.animate.set_value(-1), run_time=5)
+        self.play(r.animate.set_value(1), run_time=5)
+        self.play(r.animate.set_value(-1), run_time=5)
+        self.play(r.animate.set_value(1), run_time=5)
 
-        self.play(m.animate.set_value(1/5), run_time=2)
-        self.wait(duration=1)
-        self.play(m.animate.set_value(1), run_time=4)
-        self.wait(duration=1)
+        # # Transition to Scene 3: Show effect of parameter m on plot
+        # self.next_section(name="Show m", skip_animations=gabe_debug)
+        # self.play(FadeOut(f2_loadGroup, f1_dot, f2_dot, f2_connector), FadeIn(f1_showM), run_time=0.5)
 
-        # Transition to Scene 4: Show effect of quasistatic solution on plot
+        # self.play(m.animate.set_value(1/5), run_time=2)
+        # self.wait(duration=1)
+        # self.play(m.animate.set_value(1), run_time=4)
+        # self.wait(duration=1)
+
+        # Transition to Scene 4: To actually see snap-buckling, we'll need to reintroduce a tiny amount of transient behavior back to this solution. We do this by introducing the parameter tau0, which represents the duration of loading measured as a number of natural periods of vibration elapsed: if loading takes only one natural period, then tau0 = 1, but if loading takes 10000 natural periods, tau0 = 10000. 10000 natural periods is a long time; so long, in fact, that we can call this kind of analysis quasistatic. Let's plot the critically damped quasistatic solution now. (inset animation?????)
         self.next_section(name="Show quasistatic", skip_animations=gabe_debug)
-        self.play(m.animate.set_value(0.5), FadeIn(f2_loadGroup, f1_dot, f1, f2_dot, f2_connector), FadeOut(f1_showM), run_time=0.5)
+        #self.play(m.animate.set_value(0.5), FadeIn(f2_loadGroup, f1_dot, f1, f2_dot, f2_connector), FadeOut(f1_showM), run_time=0.5)
         #self.play(axLGroup.animate.move_to(cached_axLPosition), run_time=1)
 
         # Add numbers to plot (AI disclosure: the following x_numbers and y_numbers is based on a suggestion from ChatGPT because I could not figure out how to add them to the axes after they were already created)
@@ -378,14 +447,19 @@ class IntroStaticPlot(Scene):
             axR.get_y_axis().get_number_mobject(y, font_size=28).set_color(BLACK)
             for y in [-1.5, -1, -0.5, 0.5, 1]
         ])
-        self.play(Write(x_numbers_axL), Write(x_numbers_axR), Write(y_numbers_axL), Write(y_numbers_axR), FadeOut(f1_equation))
+        legend_quasi.next_to(legend_load, RIGHT, buff=1)
+        self.play(Write(x_numbers_axL), Write(x_numbers_axR), Write(y_numbers_axL), Write(y_numbers_axR), VGroup(legend_initial, legend_load).animate.shift([-1*VGroup(legend_initial, legend_load, legend_quasi).get_center()[0], 0, 0]))
 
         # Next - animate quasistatic solution points and give values
-        self.play(FadeIn(q_plot), FadeIn(q_dot), FadeIn(q_indicator)) # , FadeIn(anim_loop_debug)
+        legend_quasi.next_to(legend_load, RIGHT, buff=1)
+        self.play(FadeIn(q_plot), FadeIn(q_dot), FadeIn(legend_quasi), FadeToColor(f2, GREEN), FadeToColor(f2_dot, GREEN), FadeToColor(f2_connector, GREEN), FadeOut(f1_equation)) # , FadeIn(anim_loop_debug)
+        self.wait(duration=5)
+        self.play(Write(q_indicator))
+        self.wait(duration=30)
 
         r.add_updater(q_rlock)
         uSource = q_sol
-        self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=15)
+        self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=25)
         
         # Next - indicate critical loads on plot
         self.play(FadeOut(f2_loadGroup, f1_dot, f1, f2_dot, f2_connector, q_dot, run_time=0.5), LaggedStart(
@@ -396,33 +470,112 @@ class IntroStaticPlot(Scene):
                 )
                 for i in q_critical_points
             ],
-            lag_ratio = 0.1
+            lag_ratio = 0.3
         ))
         self.wait(duration=2)
+        self.play(Write(q_cp_st_desc))
+        self.wait(duration=2)
+        self.play(Write(q_cp_sb_desc))
+        self.wait(duration=5)
+
+        # Runge-Kutta Sequence ("How did we get that quasistatic equation?")
+        self.play(FadeIn(overlay_rect, overlay_equation))
+        self.play(Write(overlay_header_text))
+        self.wait(duration=5)
+        self.play(Write(overlay_extras), Write(overlay_extras2))
+        self.wait(duration=5)
+        self.play(FadeOut(overlay_rect, overlay_equation, overlay_header_text, overlay_extras, overlay_extras2))
+        
+        
+
+        self.next_section(name="Show m", skip_animations=gabe_debug)
+        self.play(FadeOut(q_plot, q_cp_st_desc, q_cp_sb_desc))
+        self.wait(duration=1)
+        self.play(TransformMatchingTex(q_indicator, f1_showM), run_time=0.5)
+        self.play(m.animate.set_value(1), run_time=4)
+        self.wait(duration=5)
+
+        self.play(m.animate.set_value(1/4), run_time=4)
+        self.wait(duration=5)
+        
+        self.play(m.animate.set_value(0.15), run_time=4)
+        r.remove_updater(q_rlock)
+        uSource = None
+        r.set_value(1.00)
+        f1.update()
+        f1_dot.update()
+        f2_loadGroup.update()
+        f2_dot.update()
+        f2_connector.update()
+
+        self.play(FadeIn(f1_dot, f1, f2_loadGroup, f2_dot, f2_connector))
+        self.play(r.animate.set_value(-0.55), run_time=2)
+        self.wait(duration=5)
+        
 
         # Fade out quasistatic solution and switch r updater to transient solution 1
-        self.play(FadeOut(q_plot, q_dot), FadeIn(f2_loadGroup, f1_dot, f1, f2_dot, f2_connector), run_time=0.5)
+        self.play(m.animate.set_value(0.5), r.animate.set_value(1), run_time=0.5)
         anim_loop.set_value(0)
-        r.remove_updater(q_rlock)
         r.add_updater(t1_rlock)
         uSource = t1_sol
 
-        # Animate transient solution 1
-        self.play(FadeIn(t1_plot, t1_dot), TransformMatchingTex(q_indicator, t1_indicator, transform_mismatches=True), run_time=0.5)
-        self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=8)
+        # Animate transient solution 1 
+        legend_trans.next_to(legend_quasi, ORIGIN)
+        self.play(FadeIn(t1_plot, t1_dot), TransformMatchingTex(legend_quasi, legend_trans), TransformMatchingTex(f1_showM, t1_indicator, transform_mismatches=True), run_time=0.5)
+        self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=12)
+        
+        # self.next_section("DEBUG 2", skip_animations=False)
+        # self.wait(2)
+        # self.remove(t1_plot)
+        # self.add(t1_plot_copy)
+        # self.wait(2)
+        # this_duration = 5
+        # n_animations = len(t1_plots)*2
+        # print(n_animations)
+        # self.play(ReplacementTransform(mobject=t1_plot_copy, target_mobject=t1_plots[0]),
+        #                 TransformMatchingTex(t1_indicator, t1_inds[0]), 
+        #                 run_time=this_duration/n_animations
+        #             )
+        # self.wait(duration=this_duration/n_animations)
+                    
+        #             # what EVER !!!!!!!!! i have been trying to fix this garbage for literally 3 hours
+        # self.play(ReplacementTransform(mobject=t1_plots[0], target_mobject=t1_plots[1]),
+        #                 TransformMatchingTex(t1_inds[0], t1_inds[1]), 
+        #                 run_time=this_duration/n_animations
+        #             )
+        # self.wait(duration=this_duration/n_animations)
+
+        # self.play(ReplacementTransform(mobject=t1_plots[1], target_mobject=t1_plots[2]),
+        #                 TransformMatchingTex(t1_inds[1], t1_inds[2]), 
+        #                 run_time=this_duration/n_animations
+        #             )
+        # self.wait(duration=this_duration/n_animations)
+        # self.next_section("DEBUG 2", skip_animations=True)
+        # # TODO Transform transient solution 1 into various values of tau0 to show effect?
 
         # Fade out transient solution 1 and switch r updater to transient solution 2
         self.play(FadeOut(t1_plot, t1_dot), run_time=0.5)
         anim_loop.set_value(0)
         # -------------------------------------------------
-        self.next_section(name="DEBUG", skip_animations=False)
         r.remove_updater(t1_rlock)
         r.add_updater(t2_rlock)
         uSource = t2_sol
 
         # Animate transient solution 2
         self.play(FadeIn(t2_plot, t2_dot), TransformMatchingTex(t1_indicator, t2_indicator, transform_mismatches=True), run_time=0.5)
-        self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=8)
+        self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=12)
+        # self.remove(t2_plot)
+        # self.add(t2_plot_copy)
+        # this_duration = 10
+        # n_animations = (len(t2_plots_ud)*2)
+        # self.play(Succession(
+        #             ReplacementTransform(mobject=t2_plot_copy, target_mobject=t2_plots_ud[0], run_time=this_duration/n_animations),
+        #             Wait(run_time=this_duration/n_animations),
+        #             *[
+        #                 Succession(ReplacementTransform(mobject=t2_plots_ud[i], target_mobject=t2_plots_ud[i+1], run_time=this_duration/n_animations), Wait(run_time=this_duration/n_animations))
+        #                 for i in range(len(t2_plots_ud)-1)
+        #             ]
+        # ))
 
         self.wait(duration=2)
 
