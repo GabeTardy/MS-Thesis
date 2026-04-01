@@ -377,12 +377,30 @@ class IntroStaticPlot(Scene):
         overlay_extras = MathTex("u=\\begin{cases}\\dfrac{\\tau}{\\tau_0}, & 0 \\le \\tau < n\\tau_0\\;\\;\\;\\;\\;\\;\\text{(Loading)}\\\\2n-\\dfrac{\\tau}{\\tau_0}, & n\\tau_0 \\le \\tau < 2n\\tau_0\\;\\text{(Unloading)}\\end{cases}", font_size=36).next_to(overlay_header_text_row2, direction=DOWN, buff=0.5)
         overlay_extras2 = MathTex("\\text{ICs: } r(0) = 1, \\left.\\dfrac{dr}{d\\tau}\\right|_{\\tau=0}=0", font_size=36).next_to(overlay_extras, direction=DOWN, buff=0.5)
 
-        VGroup(overlay_equation, overlay_header_text, overlay_header_text_row2, overlay_extras, overlay_extras2).center()
+        # New addition: tau0 overlay
+        overlay2_equation = MathTex("\\tau_0", font_size=64).set_color(BLACK)
+        overlay2_equation_target1 = MathTex("\\tau_0 = 1", font_size=48).set_color(RED)
+        overlay2_equation_target2 = MathTex("\\tau_0 = 10000", font_size=48).set_color(BLUE)
+        overlay2_text = VGroup(overlay2_equation, overlay2_equation_target1, overlay2_equation_target2).arrange(DOWN, buff=0.5).center()
+        tau0_range = ValueTracker(2.5)
+        #tau0_divisions = ValueTracker(1)
+        tau0_axes1 = Axes(x_range=[0,2.5,0.5], y_range=[0, 1.25, 0.25], x_length=8, y_length=4, axis_config={"color": BLACK}, x_axis_config={"include_numbers": True, "numbers_with_elongated_ticks": [1, 2]}, y_axis_config={"include_numbers": True}).set_color(BLACK)
+        tau0_axes2 = Axes(x_range=[0,21000,1000], y_range=[0, 1.25, 0.25], x_length=8, y_length=4, axis_config={"color": BLACK}, x_axis_config={"include_numbers": True, "numbers_to_include": [1, 10000, 20000], "numbers_with_elongated_ticks": [1, 10000, 20000]}, y_axis_config={"include_numbers": True}).set_color(BLACK)
+        VGroup(overlay2_text, tau0_axes1).arrange(RIGHT, buff=1).center()
+
+        tau0_axes_labels = tau0_axes1.get_axis_labels(x_label=cmath('\\tau_0'), y_label=cmath('u')).set_color(BLACK)
+        tau0_axes2.move_to(tau0_axes1, ORIGIN)
+
+        tau0_axis1_f1 = tau0_axes1.plot_line_graph(x_values=[0, 1, 2], y_values=[0, 1, 0], line_color=RED, vertex_dot_style={"fill_color": RED}, stroke_width=4)
+        tau0_axis2_f1 = tau0_axes2.plot_line_graph(x_values=[0, 1, 2], y_values=[0, 1, 0], line_color=RED, vertex_dot_style={"fill_color": RED}, stroke_width=4)
+        tau0_axis2_f2 = tau0_axes2.plot_line_graph(x_values=[0, 10000, 20000], y_values=[0, 1, 0], line_color=BLUE, vertex_dot_style={"fill_color": BLUE}, stroke_width=4)
 
         # ----- Animation -----
 
+        # Slide 25
+        self.next_section(name="Slide 25", skip_animations=gabe_debug)
+
         # Scene 1: In order to figure out what this solution means, let's plot the static solution on the u-r axes. 
-        self.next_section(name="Show static plot", skip_animations=gabe_debug)
         axLGroup.move_to(cached_axLPosition)
         self.play(Write(axLGroup))
         self.play(FadeIn(f1_dot, f1, legend_initial))
@@ -395,10 +413,9 @@ class IntroStaticPlot(Scene):
         self.play(Write(axLy_extra))
 
         # Now, you may be wondering: why is the independent quantity u on the horizontal axis?
-        self.wait(duration=7)
 
         # Transition to Scene 2: Well, that's so that a vertical movement on the plot represents the actual vertical displacement of the arch.
-        self.next_section(name="Show combined plots", skip_animations=gabe_debug)
+        self.next_section(name="Slide 26", skip_animations=gabe_debug)
 
         legend_load.next_to(legend_initial, RIGHT, buff=1)
 
@@ -414,20 +431,11 @@ class IntroStaticPlot(Scene):
         self.play(r.animate.set_value(1), run_time=5)
         self.play(r.animate.set_value(-1), run_time=5)
         self.play(r.animate.set_value(1), run_time=5)
+        self.play(r.animate.set_value(-1), run_time=5)
+        self.play(r.animate.set_value(1), run_time=5)
 
-        # # Transition to Scene 3: Show effect of parameter m on plot
-        # self.next_section(name="Show m", skip_animations=gabe_debug)
-        # self.play(FadeOut(f2_loadGroup, f1_dot, f2_dot, f2_connector), FadeIn(f1_showM), run_time=0.5)
-
-        # self.play(m.animate.set_value(1/5), run_time=2)
-        # self.wait(duration=1)
-        # self.play(m.animate.set_value(1), run_time=4)
-        # self.wait(duration=1)
-
-        # Transition to Scene 4: To actually see snap-buckling, we'll need to reintroduce a tiny amount of transient behavior back to this solution. We do this by introducing the parameter tau0, which represents the duration of loading measured as a number of natural periods of vibration elapsed: if loading takes only one natural period, then tau0 = 1, but if loading takes 10000 natural periods, tau0 = 10000. 10000 natural periods is a long time; so long, in fact, that we can call this kind of analysis quasistatic. Let's plot the critically damped quasistatic solution now. (inset animation?????)
-        self.next_section(name="Show quasistatic", skip_animations=gabe_debug)
-        #self.play(m.animate.set_value(0.5), FadeIn(f2_loadGroup, f1_dot, f1, f2_dot, f2_connector), FadeOut(f1_showM), run_time=0.5)
-        #self.play(axLGroup.animate.move_to(cached_axLPosition), run_time=1)
+        # Transition to Scene 3: To actually see snap-buckling, we'll need to reintroduce a tiny amount of transient behavior back to this solution. We do this by introducing the parameter tau0, which represents the duration of loading measured as a number of natural periods of vibration elapsed: if loading takes only one natural period, then tau0 = 1, but if loading takes 10000 natural periods, tau0 = 10000. 10000 natural periods is a long time; so long, in fact, that we can call this kind of analysis quasistatic. Let's plot the critically damped quasistatic solution now. (inset animation?????)
+        self.next_section(name="Slide 27", skip_animations=gabe_debug)
 
         # Add numbers to plot (AI disclosure: the following x_numbers and y_numbers is based on a suggestion from ChatGPT because I could not figure out how to add them to the axes after they were already created)
         x_numbers_axL = VGroup(*[
@@ -449,20 +457,28 @@ class IntroStaticPlot(Scene):
             for y in [-1.5, -1, -0.5, 0.5, 1]
         ])
         legend_quasi.next_to(legend_load, RIGHT, buff=1)
-        self.play(Write(x_numbers_axL), Write(x_numbers_axR), Write(y_numbers_axL), Write(y_numbers_axR), VGroup(legend_initial, legend_load).animate.shift([-1*VGroup(legend_initial, legend_load, legend_quasi).get_center()[0], 0, 0]))
+        self.play(Write(x_numbers_axL), Write(x_numbers_axR), Write(y_numbers_axL), Write(y_numbers_axR), VGroup(legend_initial, legend_load).animate.shift([-1*VGroup(legend_initial, legend_load, legend_quasi).get_center()[0], 0, 0]), FadeIn(overlay_rect, overlay2_equation))
+        self.wait(duration=2)
+        self.play(Write(tau0_axes1), Write(tau0_axes_labels), Write(overlay2_equation_target1), Write(tau0_axis1_f1))
+        self.wait(duration=5)
+        self.play(ReplacementTransform(tau0_axes1, tau0_axes2), ReplacementTransform(tau0_axis1_f1, tau0_axis2_f1), Write(tau0_axis2_f2), Write(overlay2_equation_target2))
+        self.wait(duration=2)
 
         # Next - animate quasistatic solution points and give values
         legend_quasi.next_to(legend_load, RIGHT, buff=1)
-        self.play(FadeIn(q_plot), FadeIn(q_dot), FadeIn(legend_quasi), FadeToColor(f2, GREEN), FadeToColor(f2_dot, GREEN), FadeToColor(f2_connector, GREEN), FadeOut(f1_equation)) # , FadeIn(anim_loop_debug)
-        self.wait(duration=5)
+
+        self.next_section(name="Slide 28", skip_animations=gabe_debug)
+        self.play(FadeOut(overlay_rect, tau0_axes2, tau0_axes_labels, tau0_axis2_f1, tau0_axis2_f2, overlay2_equation, overlay2_equation_target1, overlay2_equation_target2), FadeIn(q_plot), FadeIn(q_dot), FadeIn(legend_quasi), FadeToColor(f2, GREEN), FadeToColor(f2_dot, GREEN), FadeToColor(f2_connector, GREEN), FadeOut(f1_equation)) # , FadeIn(anim_loop_debug)
+        self.play(Circumscribe(legend_quasi, color=GREEN))
         self.play(Write(q_indicator))
-        self.wait(duration=30)
+        self.wait(duration=5)
 
         r.add_updater(q_rlock)
         uSource = q_sol
         self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=25)
         
         # Next - indicate critical loads on plot
+        self.next_section(name="Slide 29", skip_animations=gabe_debug)
         self.play(FadeOut(f2_loadGroup, f1_dot, f1, f2_dot, f2_connector, q_dot, run_time=0.5), LaggedStart(
             *[
                 Succession(
@@ -477,22 +493,22 @@ class IntroStaticPlot(Scene):
         self.play(Write(q_cp_st_desc))
         self.wait(duration=2)
         self.play(Write(q_cp_sb_desc))
-        self.wait(duration=5)
+
 
         # Runge-Kutta Sequence ("How did we get that quasistatic equation?")
-        self.next_section(name="Show static plot", skip_animations=False)
+        self.next_section(name="Slide 30", skip_animations=gabe_debug)
         self.play(FadeIn(overlay_rect, overlay_equation))
         self.play(Succession(Write(overlay_header_text), Write(overlay_header_text_row2)))
         self.wait(duration=5)
         self.play(Write(overlay_extras), Write(overlay_extras2))
         self.wait(duration=5)
         self.play(FadeOut(overlay_rect, overlay_equation, overlay_header_text, overlay_header_text_row2, overlay_extras, overlay_extras2))
-        self.next_section(name="Show static plot", skip_animations=True)
-        
-        self.next_section(name="Show m", skip_animations=gabe_debug)
+
+        self.next_section(name="CUT TRANSITION PORTION - DON'T WANT TO REIMPLEMENT", skip_animations=True)
         self.play(FadeOut(q_plot, q_cp_st_desc, q_cp_sb_desc))
         self.wait(duration=1)
         self.play(TransformMatchingTex(q_indicator, f1_showM), run_time=0.5)
+
         self.play(m.animate.set_value(1), run_time=4)
         self.wait(duration=5)
 
@@ -509,11 +525,12 @@ class IntroStaticPlot(Scene):
         f2_dot.update()
         f2_connector.update()
 
+        self.next_section(name="Slide ????", skip_animations=gabe_debug)
         self.play(FadeIn(f1_dot, f1, f2_loadGroup, f2_dot, f2_connector))
-        self.play(r.animate.set_value(-0.55), run_time=2)
+        self.play(r.animate.set_value(-0.7), run_time=2)
         self.wait(duration=5)
         
-
+        self.next_section(name="CUT CONTENT", skip_animations=True)
         # Fade out quasistatic solution and switch r updater to transient solution 1
         self.play(m.animate.set_value(0.5), r.animate.set_value(1), run_time=0.5)
         anim_loop.set_value(0)
