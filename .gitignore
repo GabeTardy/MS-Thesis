@@ -9,5 +9,6 @@ Animations/README.md
 uv.lock
 .venv
 Animations/media/*
+media/*
 .*
 !.gitignore
