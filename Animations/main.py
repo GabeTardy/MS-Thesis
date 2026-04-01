@@ -4,7 +4,7 @@ from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve
 
 # Debug mode?
-gabe_debug = False
+gabe_debug = True
 
 # Create Cambria Math tex_template
 cambria_math = TexTemplate()
@@ -369,14 +369,15 @@ class IntroStaticPlot(Scene):
         legend_trans    = Tex("\\(\\blacksquare\\)", " Transient Solution", font_size=28, color=GREEN).to_edge(DOWN)
 
         # New addition: Runge-Kutta Overlay
-        overlay_rect = Rectangle(color = WHITE, height=self.camera.frame_height, width=self.camera.frame_width, fill_opacity=0.9)
+        overlay_rect = Rectangle(color = WHITE, height=self.camera.frame_height, width=self.camera.frame_width, fill_opacity=0.92)
         overlay_equation = MathTex("\\dfrac{d^2 r}{d\\tau^2} + \\zeta \\dfrac{d r}{d\\tau} + ", "\\left(1-\\dfrac{1-r^2}{m}\\right)", "r", "=1-", "u", font_size=48).set_color(BLACK).to_edge(UP)
         overlay_header_text = Tex("Runge-Kutta-Fehlberg (RKF45)", font_size=56).next_to(overlay_equation, direction=DOWN)
+        overlay_header_text_row2 = Tex("(performed in Maple 2023)", font_size=34).next_to(overlay_header_text, direction=DOWN)
         #VGroup(overlay_equation, overlay_header_text).center()
-        overlay_extras = MathTex("u=\\begin{cases}\\dfrac{\\tau}{\\tau_0}, & 0 \\le \\tau < n\\tau_0\\;\\;\\;\\;\\text{(Loading)}\\\\2n-\\dfrac{\\tau}{\\tau_0}, & n\\tau_0 \\le \\tau < 2n\\tau_0\\text{(Unloading)}\\end{cases}", font_size=36).next_to(overlay_header_text, direction=DOWN, buff=0.5)
+        overlay_extras = MathTex("u=\\begin{cases}\\dfrac{\\tau}{\\tau_0}, & 0 \\le \\tau < n\\tau_0\\;\\;\\;\\;\\;\\;\\text{(Loading)}\\\\2n-\\dfrac{\\tau}{\\tau_0}, & n\\tau_0 \\le \\tau < 2n\\tau_0\\;\\text{(Unloading)}\\end{cases}", font_size=36).next_to(overlay_header_text_row2, direction=DOWN, buff=0.5)
         overlay_extras2 = MathTex("\\text{ICs: } r(0) = 1, \\left.\\dfrac{dr}{d\\tau}\\right|_{\\tau=0}=0", font_size=36).next_to(overlay_extras, direction=DOWN, buff=0.5)
 
-        VGroup(overlay_equation, overlay_header_text, overlay_extras, overlay_extras2).center()
+        VGroup(overlay_equation, overlay_header_text, overlay_header_text_row2, overlay_extras, overlay_extras2).center()
 
         # ----- Animation -----
 
@@ -479,15 +480,15 @@ class IntroStaticPlot(Scene):
         self.wait(duration=5)
 
         # Runge-Kutta Sequence ("How did we get that quasistatic equation?")
+        self.next_section(name="Show static plot", skip_animations=False)
         self.play(FadeIn(overlay_rect, overlay_equation))
-        self.play(Write(overlay_header_text))
+        self.play(Succession(Write(overlay_header_text), Write(overlay_header_text_row2)))
         self.wait(duration=5)
         self.play(Write(overlay_extras), Write(overlay_extras2))
         self.wait(duration=5)
-        self.play(FadeOut(overlay_rect, overlay_equation, overlay_header_text, overlay_extras, overlay_extras2))
+        self.play(FadeOut(overlay_rect, overlay_equation, overlay_header_text, overlay_header_text_row2, overlay_extras, overlay_extras2))
+        self.next_section(name="Show static plot", skip_animations=True)
         
-        
-
         self.next_section(name="Show m", skip_animations=gabe_debug)
         self.play(FadeOut(q_plot, q_cp_st_desc, q_cp_sb_desc))
         self.wait(duration=1)
