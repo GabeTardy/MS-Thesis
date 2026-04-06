@@ -1,0 +1,9 @@
+! New version of the bimodulus setter. Did not want to modify setBimod since it is used in other macros; too much work to code around the original.
+
+! Et, Ec, nut, nuc, method (1- first invariant Liu, 2 - first invariant atan, 3 - Latorre and Montans (unfinished)), beta (first invariant atan)
+tb,user,1,1,6
+tbtemp,0
+tbdata,1,ARG1,ARG2,ARG3,ARG4,ARG5-1,ARG6
+tb,state,1,,7
+outres,all,all
+outres,svar,all,,,7 ! turn state variables on for solution

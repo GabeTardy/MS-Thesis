@@ -6,6 +6,18 @@ from scipy.optimize import fsolve
 # Debug mode?
 gabe_debug = True
 
+# For the last slides I wanted to bring back some of the cut segments with the background switched to white on black (like 3b1b) instead of black on white (like the rest of my presentation)
+is_cut_content = False
+gabe_debug = gabe_debug or is_cut_content # force debug if we are doing cut content
+
+probably_black = BLACK if not is_cut_content else WHITE
+probably_white = WHITE if not is_cut_content else BLACK
+
+ORANGE = ManimColor("#FF8021")
+BLUE = ManimColor("#4E67C8")
+GREEN = ManimColor("#A7EA52")
+PURPLE = ManimColor("#5DCEAF")
+
 # Create Cambria Math tex_template
 cambria_math = TexTemplate()
 cambria_math.description = "Cambria Math"
@@ -23,9 +35,9 @@ cambria_math.tex_compiler = "xelatex"
 cambria_math.output_format = ".xdv"
 config.tex_template = cambria_math
 
-config.background_color = "#ffffff"
-Tex.set_default(color=BLACK)
-MathTex.set_default(color=BLACK)
+config.background_color = probably_white
+Tex.set_default(color=probably_black)
+MathTex.set_default(color=probably_black)
 
 # First animation for factoring the static equation
 class FactorStaticEq(Scene):
@@ -214,18 +226,18 @@ class IntroStaticPlot(Scene):
             ]
     
         # Create plot axes and arrangement
-        axL = Axes(x_range=[-1,3,0.5], y_range=[-1.5,1.5,0.5], axis_config={"color": BLACK}, x_length=6, y_length=6)
-        axR = Axes(x_range=[0,1,0.25], y_range=[-1.5,1.5,0.5], axis_config={"color": BLACK}, x_length=6, y_length=6)
+        axL = Axes(x_range=[-1,3,0.5], y_range=[-1.5,1.5,0.5], axis_config={"color": probably_black}, x_length=6, y_length=6)
+        axR = Axes(x_range=[0,1,0.25], y_range=[-1.5,1.5,0.5], axis_config={"color": probably_black}, x_length=6, y_length=6)
        
         #VGroup(axL, axR).arrange(RIGHT, buff=1)
 
         # Create plot labels
-        axLLabels = axL.get_axis_labels(x_label=cmath('u'), y_label=cmath('r')).set_color(BLACK)
-        axRLabels = axR.get_axis_labels(x_label=cmath('\\dfrac{x}{L}'), y_label=cmath('r')).set_color(BLACK)
+        axLLabels = axL.get_axis_labels(x_label=cmath('u'), y_label=cmath('r')).set_color(probably_black)
+        axRLabels = axR.get_axis_labels(x_label=cmath('\\dfrac{x}{L}'), y_label=cmath('r')).set_color(probably_black)
 
         # Extra notes
-        axLx_extra = Tex("Load", color=BLACK, font_size=28).next_to(axLLabels[0], direction=UP, buff=0.1)
-        axLy_extra = Tex("Displacement", color=BLACK, font_size=28).rotate(PI/2).next_to(axL.get_y_axis(), direction=LEFT, buff=0.1)
+        axLx_extra = Tex("Load", color=probably_black, font_size=28).next_to(axLLabels[0], direction=UP, buff=0.1)
+        axLy_extra = Tex("Displacement", color=probably_black, font_size=28).rotate(PI/2).next_to(axL.get_y_axis(), direction=LEFT, buff=0.1)
 
         # Create ValueTracker for parameters r, u (linked to r initially), m
         r = ValueTracker(1)
@@ -258,9 +270,9 @@ class IntroStaticPlot(Scene):
             r.get_value()
         ), color=BLUE))
 
-        f1_equation = cmath("u=1-\\dfrac{r}{m}\\left(r^2-(1-m)\\right)", font_size=28).to_edge(DOWN).shift([1, 0.5, 0]).set_color(BLACK)
+        f1_equation = cmath("u=1-\\dfrac{r}{m}\\left(r^2-(1-m)\\right)", font_size=28).to_edge(DOWN).shift([1, 0.5, 0]).set_color(probably_black)
 
-        f1_showM = always_redraw(lambda: cmath("m=", "{:.3f}".format(m.get_value()), font_size=34).to_edge(UP).shift([-1.5, -0.5, 0]).set_color(BLACK))
+        f1_showM = always_redraw(lambda: cmath("m=", "{:.3f}".format(m.get_value()), font_size=34).to_edge(UP).shift([-1.5, -0.5, 0]).set_color(probably_black))
 
         axLGroup = VGroup(axL, axLLabels, f1_equation)
         axRGroup = VGroup(axR, axRLabels)
@@ -296,12 +308,12 @@ class IntroStaticPlot(Scene):
         # ----- Quasistatic/Transient -----
         anim_loop = ValueTracker(0) # animate from 0 (beginning) to 1 (end) (0.5 - good debug value)
         anim_index = lambda npts: max(int(anim_loop.get_value()*npts) - 1, 1) # get frame index corresponding to animation progress
-        #anim_loop_debug = always_redraw(lambda: cmath("debug=", "{:.2f}".format(anim_loop.get_value()), font_size=24).to_edge(UP).to_edge(RIGHT).set_color(BLACK))
+        #anim_loop_debug = always_redraw(lambda: cmath("debug=", "{:.2f}".format(anim_loop.get_value()), font_size=24).to_edge(UP).to_edge(RIGHT).set_color(probably_black))
         q_sol = acquire_transient_solution(2, 0.5, 3, 10000, 500) # create quasistatic solution
         
         q_plot = always_redraw(lambda: axL.plot_line_graph(q_sol[2][0:anim_index(q_sol[3])], q_sol[1][0:anim_index(q_sol[3])], line_color=GREEN, stroke_width=4, add_vertex_dots=False))
         q_dot = always_redraw(lambda: Dot(point=axL.c2p(q_sol[2][anim_index(q_sol[3])], q_sol[1][anim_index(q_sol[3])]), color=GREEN))
-        q_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "10000","\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(BLACK)
+        q_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "10000","\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(probably_black)
         q_rlock = lambda i: i.set_value(q_sol[1][anim_index(q_sol[3])])
         q_ulock = lambda i: i.set_value(q_sol[2][anim_index(q_sol[3])])
 
@@ -330,11 +342,11 @@ class IntroStaticPlot(Scene):
         #     for sol in t1_sols
         # ]
         # t1_inds = [
-        #     cmath("m=","0.5","\\\\","\\tau_0=", tau0,"\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(BLACK) for tau0 in tau0s
+        #     cmath("m=","0.5","\\\\","\\tau_0=", tau0,"\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(probably_black) for tau0 in tau0s
         # ]
 
         t1_dot = always_redraw(lambda: Dot(point=axL.c2p(t1_sol[2][anim_index(t1_sol[3])], t1_sol[1][anim_index(t1_sol[3])]), color=GREEN))
-        t1_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "50","\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(BLACK)
+        t1_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "50","\\\\", "\\zeta=", "2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(probably_black)
         t1_rlock = lambda i: i.set_value(t1_sol[1][anim_index(t1_sol[3])])
         t1_ulock = lambda i: i.set_value(t1_sol[2][anim_index(t1_sol[3])])
 
@@ -358,9 +370,29 @@ class IntroStaticPlot(Scene):
         #     for sol in t2_sols_ud
         # ]
         t2_dot = always_redraw(lambda: Dot(point=axL.c2p(t2_sol[2][anim_index(t2_sol[3])], t2_sol[1][anim_index(t2_sol[3])]), color=GREEN))
-        t2_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "50","\\\\", "\\zeta=", "0.2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(BLACK)
+        t2_indicator = cmath("m=","0.5","\\\\","\\tau_0=", "50","\\\\", "\\zeta=", "0.2", font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(probably_black)
         t2_rlock = lambda i: i.set_value(t2_sol[1][anim_index(t2_sol[3])])
         t2_ulock = lambda i: i.set_value(t2_sol[2][anim_index(t2_sol[3])])
+
+        extra_sol_data = [
+            [2, 0.188, 3, 500, 5000],
+            [2, 1.5, 3, 500, 5000],
+            #[16, 0.5, 3, 50, 5000],
+            #[1/8, 0.5, 3, 50, 5000],
+            #[2, 0.5, 3, 5, 5000],
+            #[0, 0.5, 3, 50, 5000],
+        ]
+        extra_sols = [
+            acquire_transient_solution(*esd)
+            for esd in extra_sol_data
+        ]
+        esc = 0
+        max_esc = len(extra_sols)
+
+        extra_plot = always_redraw(lambda: axL.plot_line_graph(extra_sols[esc][2][0:anim_index(extra_sols[esc][3])], extra_sols[esc][1][0:anim_index(extra_sols[esc][3])], line_color=GREEN, stroke_width=4, add_vertex_dots=False))
+        extra_dot = always_redraw(lambda: Dot(point=axL.c2p(extra_sols[esc][2][anim_index(extra_sols[esc][3])], extra_sols[esc][1][anim_index(extra_sols[esc][3])]), color=GREEN))
+        extra_indicators = [cmath("m=",extra_sol_data[esc2][1],"\\\\","\\tau_0=", extra_sol_data[esc2][3],"\\\\", "\\zeta=", extra_sol_data[esc2][0], font_size=34).to_edge(UP).shift([-1.5, 0, 0]).set_color(probably_black) for esc2 in range(len(extra_sol_data))]
+        extra_rlock = lambda i: i.set_value(extra_sols[esc][1][anim_index(extra_sols[esc][3])])
 
         # legends
         legend_initial = Tex("\\(\\blacksquare\\) Static Solution", font_size=28, color=BLUE).to_edge(DOWN)
@@ -370,7 +402,7 @@ class IntroStaticPlot(Scene):
 
         # New addition: Runge-Kutta Overlay
         overlay_rect = Rectangle(color = WHITE, height=self.camera.frame_height, width=self.camera.frame_width, fill_opacity=0.92)
-        overlay_equation = MathTex("\\dfrac{d^2 r}{d\\tau^2} + \\zeta \\dfrac{d r}{d\\tau} + ", "\\left(1-\\dfrac{1-r^2}{m}\\right)", "r", "=1-", "u", font_size=48).set_color(BLACK).to_edge(UP)
+        overlay_equation = MathTex("\\dfrac{d^2 r}{d\\tau^2} + \\zeta \\dfrac{d r}{d\\tau} + ", "\\left(1-\\dfrac{1-r^2}{m}\\right)", "r", "=1-", "u", font_size=48).set_color(probably_black).to_edge(UP)
         overlay_header_text = Tex("Runge-Kutta-Fehlberg (RKF45)", font_size=56).next_to(overlay_equation, direction=DOWN)
         overlay_header_text_row2 = Tex("(performed in Maple 2023)", font_size=34).next_to(overlay_header_text, direction=DOWN)
         #VGroup(overlay_equation, overlay_header_text).center()
@@ -378,17 +410,17 @@ class IntroStaticPlot(Scene):
         overlay_extras2 = MathTex("\\text{ICs: } r(0) = 1, \\left.\\dfrac{dr}{d\\tau}\\right|_{\\tau=0}=0", font_size=36).next_to(overlay_extras, direction=DOWN, buff=0.5)
 
         # New addition: tau0 overlay
-        overlay2_equation = MathTex("\\tau_0", font_size=64).set_color(BLACK)
+        overlay2_equation = MathTex("\\tau_0", font_size=64).set_color(probably_black)
         overlay2_equation_target1 = MathTex("\\tau_0 = 1", font_size=48).set_color(RED)
         overlay2_equation_target2 = MathTex("\\tau_0 = 10000", font_size=48).set_color(BLUE)
         overlay2_text = VGroup(overlay2_equation, overlay2_equation_target1, overlay2_equation_target2).arrange(DOWN, buff=0.5).center()
         tau0_range = ValueTracker(2.5)
         #tau0_divisions = ValueTracker(1)
-        tau0_axes1 = Axes(x_range=[0,2.5,0.5], y_range=[0, 1.25, 0.25], x_length=8, y_length=4, axis_config={"color": BLACK}, x_axis_config={"include_numbers": True, "numbers_with_elongated_ticks": [1, 2]}, y_axis_config={"include_numbers": True}).set_color(BLACK)
-        tau0_axes2 = Axes(x_range=[0,21000,1000], y_range=[0, 1.25, 0.25], x_length=8, y_length=4, axis_config={"color": BLACK}, x_axis_config={"include_numbers": True, "numbers_to_include": [1, 10000, 20000], "numbers_with_elongated_ticks": [1, 10000, 20000]}, y_axis_config={"include_numbers": True}).set_color(BLACK)
+        tau0_axes1 = Axes(x_range=[0,2.5,0.5], y_range=[0, 1.25, 0.25], x_length=8, y_length=4, axis_config={"color": probably_black}, x_axis_config={"include_numbers": True, "numbers_with_elongated_ticks": [1, 2]}, y_axis_config={"include_numbers": True}).set_color(probably_black)
+        tau0_axes2 = Axes(x_range=[0,21000,1000], y_range=[0, 1.25, 0.25], x_length=8, y_length=4, axis_config={"color": probably_black}, x_axis_config={"include_numbers": True, "numbers_to_include": [1, 10000, 20000], "numbers_with_elongated_ticks": [1, 10000, 20000]}, y_axis_config={"include_numbers": True}).set_color(probably_black)
         VGroup(overlay2_text, tau0_axes1).arrange(RIGHT, buff=1).center()
 
-        tau0_axes_labels = tau0_axes1.get_axis_labels(x_label=cmath('\\tau_0'), y_label=cmath('u')).set_color(BLACK)
+        tau0_axes_labels = tau0_axes1.get_axis_labels(x_label=cmath('\\tau_0'), y_label=cmath('u')).set_color(probably_black)
         tau0_axes2.move_to(tau0_axes1, ORIGIN)
 
         tau0_axis1_f1 = tau0_axes1.plot_line_graph(x_values=[0, 1, 2], y_values=[0, 1, 0], line_color=RED, vertex_dot_style={"fill_color": RED}, stroke_width=4)
@@ -396,6 +428,18 @@ class IntroStaticPlot(Scene):
         tau0_axis2_f2 = tau0_axes2.plot_line_graph(x_values=[0, 10000, 20000], y_values=[0, 1, 0], line_color=BLUE, vertex_dot_style={"fill_color": BLUE}, stroke_width=4)
 
         # ----- Animation -----
+
+        # Cut content :)
+        if is_cut_content:
+            self.next_section(name="Cut Content: Intro to Static Plot", skip_animations=is_cut_content)
+            cut_content_group = VGroup(
+                Tex("Cut Content", font_size=56).center(),
+                Tex("Transient Solution Animations").center()
+            ).arrange(DOWN, buff=0.5).center()
+            self.play(Write(cut_content_group))
+            self.wait(duration=2)
+            self.play(FadeOut(cut_content_group))
+        
 
         # Slide 25
         self.next_section(name="Slide 25", skip_animations=gabe_debug)
@@ -439,21 +483,21 @@ class IntroStaticPlot(Scene):
 
         # Add numbers to plot (AI disclosure: the following x_numbers and y_numbers is based on a suggestion from ChatGPT because I could not figure out how to add them to the axes after they were already created)
         x_numbers_axL = VGroup(*[
-            axL.get_x_axis().get_number_mobject(x, font_size=28).set_color(BLACK)
+            axL.get_x_axis().get_number_mobject(x, font_size=28).set_color(probably_black)
             for x in [0.5, 1, 1.5, 2, 2.5]
         ])
 
         x_numbers_axR = VGroup(*[
-            axR.get_x_axis().get_number_mobject(x, font_size=28).set_color(BLACK)
+            axR.get_x_axis().get_number_mobject(x, font_size=28).set_color(probably_black)
             for x in [0.25, 0.5, 0.75]
         ])
 
         y_numbers_axL = VGroup(*[
-            axL.get_y_axis().get_number_mobject(y, font_size=28).set_color(BLACK)
+            axL.get_y_axis().get_number_mobject(y, font_size=28).set_color(probably_black)
             for y in [-1.5, -1, -0.5, 0.5, 1]
         ])
         y_numbers_axR = VGroup(*[
-            axR.get_y_axis().get_number_mobject(y, font_size=28).set_color(BLACK)
+            axR.get_y_axis().get_number_mobject(y, font_size=28).set_color(probably_black)
             for y in [-1.5, -1, -0.5, 0.5, 1]
         ])
         legend_quasi.next_to(legend_load, RIGHT, buff=1)
@@ -525,7 +569,7 @@ class IntroStaticPlot(Scene):
         f2_dot.update()
         f2_connector.update()
 
-        self.next_section(name="Slide ????", skip_animations=gabe_debug)
+        self.next_section(name="Slide m", skip_animations=gabe_debug)
         self.play(FadeIn(f1_dot, f1, f2_loadGroup, f2_dot, f2_connector))
         self.play(r.animate.set_value(-0.7), run_time=2)
         self.wait(duration=5)
@@ -540,6 +584,8 @@ class IntroStaticPlot(Scene):
         # Animate transient solution 1 
         legend_trans.next_to(legend_quasi, ORIGIN)
         self.play(FadeIn(t1_plot, t1_dot), TransformMatchingTex(legend_quasi, legend_trans), TransformMatchingTex(f1_showM, t1_indicator, transform_mismatches=True), run_time=0.5)
+
+        self.next_section(name="CUT CONTENT - FOR PRESENTATION", skip_animations=(not is_cut_content))
         self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=12)
         
         # self.next_section("DEBUG 2", skip_animations=False)
@@ -594,6 +640,34 @@ class IntroStaticPlot(Scene):
         #                 for i in range(len(t2_plots_ud)-1)
         #             ]
         # ))
+
+        # Play extra solutions (Bonus content)
+        self.play(FadeOut(t2_plot, t2_dot), run_time=0.5)
+        r.remove_updater(t2_rlock)
+        r.add_updater(extra_rlock)
+
+        prev_indicator = t2_indicator
+
+        if not is_cut_content:
+            self.next_section(name="Extra Solutions", skip_animations=False) #(not is_cut_content))
+
+        #esc = 2 # skip the two that I would like to show in the slides
+        while esc < max_esc:
+            anim_loop.set_value(0)
+            uSource = extra_sols[esc]
+            
+            extra_plot.update()
+            extra_dot.update()
+
+            #if not is_cut_content:
+            #    self.next_section(name=f"Cut Solution {esc+1}", skip_animations=False) #(not is_cut_content))
+
+            self.play(FadeIn(extra_plot, extra_dot), TransformMatchingTex(prev_indicator, extra_indicators[esc],transform_mismatches=True), m.animate.set_value(extra_sol_data[esc][1]), run_time=0.5)
+            self.play(anim_loop.animate.set_value(1), rate_func=rate_functions.linear, run_time=10)
+            self.wait(duration=2)
+            self.play(FadeOut(extra_plot, extra_dot), run_time=0.5)
+            prev_indicator = extra_indicators[esc]
+            esc = esc + 1
 
         self.wait(duration=2)
 
@@ -721,13 +795,13 @@ class CriticalLoadPlot(ThreeDScene):
         ax_y = ax.get_y_axis()
         ax_z = ax.get_z_axis()
 
-        ax_x_l = ax.get_x_axis_label(MathTex('\\eta_E').set_color(BLACK))
-        ax_y_l = ax.get_y_axis_label(MathTex('u_{crit}').set_color(BLACK)).rotate(-PI/2)
-        ax_z_l = ax.get_z_axis_label(MathTex('m').set_color(BLACK)).rotate(PI, axis=RIGHT).next_to(ax_z.get_end(), IN + UP, buff=0.25)
+        ax_x_l = ax.get_x_axis_label(MathTex('\\eta_E').set_color(probably_black))
+        ax_y_l = ax.get_y_axis_label(MathTex('u_{crit}').set_color(probably_black)).rotate(-PI/2)
+        ax_z_l = ax.get_z_axis_label(MathTex('m').set_color(probably_black)).rotate(PI, axis=RIGHT).next_to(ax_z.get_end(), IN + UP, buff=0.25)
         
-        ax_x.set_color(BLACK)
-        ax_y.set_color(BLACK)
-        ax_z.set_color(BLACK)
+        ax_x.set_color(probably_black)
+        ax_y.set_color(probably_black)
+        ax_z.set_color(probably_black)
 
         # Create a grid for the etaE-m plane
         etaE_m_plane = Surface(lambda u, v: ax.c2p(u, 0, v), resolution=[8, 10], u_range=[0, 4], v_range=[0, 1]).set_style(fill_color = PURPLE, fill_opacity = 0.05, stroke_color = PURPLE, stroke_opacity = 0.5)
@@ -742,7 +816,7 @@ class CriticalLoadPlot(ThreeDScene):
         best_fit_dp = VGroup(*[
             VGroup(
                 MathTex("m = ", m[i], font_size=34).rotate(PI/2).next_to(ax.c2p([0,1,m[i]]), LEFT),
-                ax.plot_parametric_curve(lambda t: (0, t, m[i]), t_range=[-2,4,0.5], color=BLACK),
+                ax.plot_parametric_curve(lambda t: (0, t, m[i]), t_range=[-2,4,0.5], color=probably_black),
                 *[
                     Dot(ax.c2p(*pt, m[i]), color=BLUE)
                     for pt in snap_through[i]
@@ -764,14 +838,14 @@ class CriticalLoadPlot(ThreeDScene):
                 ax.plot_parametric_curve(lambda x: (x, C_1[i]/(x+1)+C_2[i], m[i]), t_range = [0, 4, 0.01], color=ORANGE, stroke_width=8),
                 MathTex("u_{cr,ST} = ", "{:.3f}".format(1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i]), font_size=28).next_to(ax.c2p([4, 1 + 2*np.sqrt(3)/9*(1-m[i])**(3/2)/m[i], m[i]]), RIGHT),
                 MathTex("u_{cr,SB} = \\dfrac{", "{:.3f}".format(C_1[i]), "}{x+1} - ", "{:.3f}".format(-C_2[i]), font_size=28).next_to(ax.c2p([4, C_1[i]/(4+1)+C_2[i], m[i]]), RIGHT),
-                # Surface(lambda u, v: ax.c2p(u, v, m[i]), u_range=(0,4), v_range=(-2,4), color=BLACK).set_style(fill_opacity=0.1, fill_color=BLACK, stroke_opacity=1, stroke_color=BLACK)
+                # Surface(lambda u, v: ax.c2p(u, v, m[i]), u_range=(0,4), v_range=(-2,4), color=probably_black).set_style(fill_opacity=0.1, fill_color=probably_black, stroke_opacity=1, stroke_color=probably_black)
             )
             for i in case_order
         ])
 
         # Show no-snap-through/no-snap-back points
         best_fit_ns = VGroup(*[
-            VGroup(Dot(ax.c2p(no_snap_through[i]), color=BLACK), Dot(ax.c2p(no_snap_back[i]), color=PURPLE))
+            VGroup(Dot(ax.c2p(no_snap_through[i]), color=probably_black), Dot(ax.c2p(no_snap_back[i]), color=PURPLE))
             for i in [0, 1, 2, 3, 4] # Using case order here would scramble the points and idk what the contracted notation for this is
         ])
 
@@ -805,10 +879,10 @@ class CriticalLoadPlot(ThreeDScene):
             else:
                 return 2
 
-        sbs_init = (Surface(lambda u, v: ax.c2p(u, 1.5/(u + 0.5) - 2*np.sqrt(3)/9*(1-v)**(3/2)/v, v), u_range=(0,4), v_range=(0.1,1), resolution=[8*extra_res, 10*extra_res]).set_style(fill_opacity=0.5, stroke_opacity=0.9, stroke_color=BLACK))
-        sts_init = (Surface(lambda u, v: ax.c2p(u, 1 + 2*np.sqrt(3)/9*(1-v)**(3/2)/v, v), u_range=(0,4), v_range=(0.1,1), resolution=[8*extra_res, 10*extra_res]).set_style(fill_opacity=0.5, stroke_opacity=0.9, stroke_color=BLACK))
-        best_fit_surface_sb = self.Surface_set_fill_by_func_HACK(surf=sbs_init, axes=ax, colorscale=[(PURPLE, 1), (ORANGE, 1.25), (ORANGE, 2.75), (BLACK, 3)], func=snap_surface_state)
-        best_fit_surface_st = self.Surface_set_fill_by_func_HACK(surf=sts_init, axes=ax, colorscale=[(BLUE, 2.5), (BLACK, 3)], func=snap_surface_state)
+        sbs_init = (Surface(lambda u, v: ax.c2p(u, 1.5/(u + 0.5) - 2*np.sqrt(3)/9*(1-v)**(3/2)/v, v), u_range=(0,4), v_range=(0.1,1), resolution=[8*extra_res, 10*extra_res]).set_style(fill_opacity=0.5, stroke_opacity=0.9, stroke_color=probably_black))
+        sts_init = (Surface(lambda u, v: ax.c2p(u, 1 + 2*np.sqrt(3)/9*(1-v)**(3/2)/v, v), u_range=(0,4), v_range=(0.1,1), resolution=[8*extra_res, 10*extra_res]).set_style(fill_opacity=0.5, stroke_opacity=0.9, stroke_color=probably_black))
+        best_fit_surface_sb = self.Surface_set_fill_by_func_HACK(surf=sbs_init, axes=ax, colorscale=[(PURPLE, 1), (ORANGE, 1.25), (ORANGE, 2.75), (probably_black, 3)], func=snap_surface_state)
+        best_fit_surface_st = self.Surface_set_fill_by_func_HACK(surf=sts_init, axes=ax, colorscale=[(BLUE, 2.5), (probably_black, 3)], func=snap_surface_state)
         best_fit_surfaces = VGroup(best_fit_surface_st, best_fit_surface_sb)
 
         self.camera.set_zoom(0.8)
@@ -820,7 +894,7 @@ class CriticalLoadPlot(ThreeDScene):
 
         legend_initial = Tex("\\(\\blacksquare\\) Snap-through", font_size=28, color=BLUE)
         legend_load    = Tex("\\(\\blacksquare\\) Snap-back", font_size=28, color=ORANGE)
-        legend_quasi    = Tex("\\(\\blacksquare\\)", " Snap-buckling ceases", font_size=28, color=BLACK)
+        legend_quasi    = Tex("\\(\\blacksquare\\)", " Snap-buckling ceases", font_size=28, color=probably_black)
         legend_trans    = Tex("\\(\\blacksquare\\)", " Snap-back ceases (Morphing)", font_size=28, color=PURPLE)
 
         legends = VGroup(legend_initial, legend_load, legend_quasi, legend_trans).arrange(RIGHT, buff=0.5).center().to_edge(DOWN, buff=0.25)
