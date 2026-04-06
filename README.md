@@ -22,10 +22,12 @@ git clone https://github.com/GabeTardy/MS-Thesis.git
 
 ### Development Requirements
 #### MS-Thesis/Code
-- [Ansys Mechanical APDL 2025R1+](https://www.ansys.com/products/structures/ansys-mechanical) on an administrative account
+- [Ansys Mechanical APDL 2025R1+](https://www.ansys.com/products/structures/ansys-mechanical)*
 - [Maplesoft Maple 2025.1+](https://www.maplesoft.com/products/maple/new_features/index.aspx)
 - [APDL Language Support](https://marketplace.visualstudio.com/items?itemName=ekibun.apdl-language-support) for VS Code
 - Recommended: [Modern Fortran](https://marketplace.visualstudio.com/items?itemName=fortran-lang.linter-gfortran) for VS Code
+
+\* An administrator account is required to compile `usermat.F`.
 
 #### MS-Thesis/Animations
 - [uv](https://github.com/astral-sh/uv) Package Manager (Or knowledge of how to use another python package manager)
