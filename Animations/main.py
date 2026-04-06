@@ -4,10 +4,10 @@ from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve
 
 # Debug mode?
-gabe_debug = True
+gabe_debug = False
 
 # For the last slides I wanted to bring back some of the cut segments with the background switched to white on black (like 3b1b) instead of black on white (like the rest of my presentation)
-is_cut_content = True
+is_cut_content = False
 gabe_debug = gabe_debug or is_cut_content # force debug if we are doing cut content
 
 probably_black = BLACK if not is_cut_content else WHITE
@@ -433,7 +433,7 @@ class IntroStaticPlot(Scene):
         if is_cut_content:
             self.next_section(name="Cut Content: Intro to Static Plot", skip_animations=False)
             cut_content_group = VGroup(
-                Tex("Cut Content", font_size=56).center(),
+                Tex("Cut Content", font_size=64).center(),
                 Tex("Transient Solution Animations").center()
             ).arrange(DOWN, buff=0.5).center()
             self.play(Write(cut_content_group))
